@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}个人中心 - CSDN{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 900px; margin: 0 auto;">
+    <div class="card-title">个人中心</div>
+    <div style="display: flex; gap: 20px; align-items: flex-start;">
+        <div style="min-width: 140px; text-align: center;">
+            <i class="fas fa-user-circle" style="font-size: 64px; color: var(--primary-color);"></i>
+            <div style="margin-top: 8px; font-weight: 600;">{{ current_user.username }}</div>
+        </div>
+        <div style="flex: 1;">
+            <div class="card" style="margin: 0;">
+                <div class="card-title">阅读统计</div>
+                <div id="stats" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                    <div class="card" style="margin: 0;">
+                        <div class="card-title" style="font-size: 14px;">书库数量</div>
+                        <div id="stat-books" style="font-size: 24px; font-weight: 700;">--</div>
+                    </div>
+                    <div class="card" style="margin: 0;">
+                        <div class="card-title" style="font-size: 14px;">阅读会话</div>
+                        <div id="stat-sessions" style="font-size: 24px; font-weight: 700;">--</div>
+                    </div>
+                    <div class="card" style="margin: 0;">
+                        <div class="card-title" style="font-size: 14px;">累计时间</div>
+                        <div id="stat-time" style="font-size: 24px; font-weight: 700;">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-buttons" style="margin-top: 16px;">
+                <a href="{{ url_for('library') }}" class="btn">我的书库</a>
+                <a href="{{ url_for('upload_book') }}" class="btn btn-secondary">上传书籍</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline" style="float: right;">退出登录</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/reading_stats')
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('stat-books').textContent = data.total_books;
+            document.getElementById('stat-sessions').textContent = data.reading_sessions;
+            document.getElementById('stat-time').textContent = data.total_time;
+        })
+        .catch(err => console.error('读取统计失败:', err));
+});
+</script>
+{% endblock %}

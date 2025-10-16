@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}登录 - CSDN{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 500px; margin: 0 auto;">
+    <div class="card-title">登录</div>
+    <form method="post" action="{{ url_for('login') }}">
+        <div class="form-group">
+            <label class="form-label" for="username">用户名</label>
+            <input type="text" class="form-control" id="username" name="username" required>
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="password">密码</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+        <div class="form-group">
+            <button type="submit" class="btn">登录</button>
+        </div>
+    </form>
+    <div style="margin-top: 15px;">
+        <p>还没有账号？<a href="{{ url_for('register') }}">立即注册</a></p>
+    </div>
+</div>
+{% endblock %}

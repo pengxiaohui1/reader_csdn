@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}CSDN - 专业开发者社区{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-title">欢迎使用CSDN阅读器</div>
+    <p>这是一个专为开发者设计的阅读工具，支持多种电子书格式。</p>
+    
+    {% if current_user.is_authenticated %}
+    <div class="action-buttons">
+        <a href="{{ url_for('library') }}" class="btn">进入我的书库</a>
+        <a href="{{ url_for('upload_book') }}" class="btn btn-secondary">上传新书籍</a>
+    </div>
+    {% else %}
+    <div class="action-buttons">
+        <a href="{{ url_for('login') }}" class="btn">登录</a>
+        <a href="{{ url_for('register') }}" class="btn btn-secondary">注册</a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="card-title">功能特点</div>
+    <ul>
+        <li>支持EPUB、PDF、TXT等多种电子书格式</li>
+        <li>提供浅色/深色模式切换功能</li>
+        <li>CSDN风格界面设计，简洁美观</li>
+        <li>隐蔽浏览功能，一键切换工作模式</li>
+        <li>完整的阅读器功能：目录导航、书签、进度保存、字体调整</li>
+    </ul>
+</div>
+{% endblock %}

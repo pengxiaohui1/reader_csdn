@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}我的书库 - CSDN{% endblock %}
+
+{% block sidebar %}
+<div class="sidebar">
+    <div class="sidebar-title">我的书库</div>
+    <ul class="sidebar-menu">
+        <li><a href="{{ url_for('library') }}" class="active">全部书籍</a></li>
+        <li><a href="{{ url_for('upload_book') }}">上传新书籍</a></li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-title">我的书籍</div>
+    
+    {% if books %}
+    <div class="book-list">
+        {% for book in books %}
+        <div class="book-card">
+            <div class="book-cover">
+                {% if book.cover_path %}
+                <img src="{{ book.cover_path }}" alt="{{ book.title }}">
+                {% else %}
+                <i class="fas fa-book" style="font-size: 48px;"></i>
+                {% endif %}
+            </div>
+            <div class="book-info">
+                <div class="book-title">{{ book.title }}</div>
+                <div class="book-format">{{ book.file_format }}</div>
+                <a href="{{ url_for('read_book', book_id=book.id) }}" class="btn" style="margin-top: 10px; width: 100%;">阅读</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>您的书库中还没有书籍。</p>
+    <a href="{{ url_for('upload_book') }}" class="btn">上传新书籍</a>
+    {% endif %}
+</div>
+{% endblock %}

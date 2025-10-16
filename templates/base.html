@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CSDN - 专业开发者社区{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- 头部导航栏 -->
+    <header class="header">
+        <div class="header-container">
+            <div class="header-left">
+                <a href="https://blog.csdn.net" class="logo">
+                    <!-- <span class="logo-text">CSDN</span> -->
+                    <img src="{{ url_for('static', filename='pic/logo.png') }}" alt="CSDN" class="logo-img" style="height: 44px; width: 80px;">
+                </a>
+                <div class="nav-main">
+                    <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">首页</a>
+                    <a href="{{ url_for('library') }}" class="nav-link {% if request.endpoint == 'library' %}active{% endif %}">书库</a>
+                    <a href="#" class="nav-link">博客</a>
+                    <a href="#" class="nav-link">下载</a>
+                    <a href="#" class="nav-link">论坛</a>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="search-box">
+                    <input type="text" placeholder="搜索书籍、文章..." class="search-input">
+                    <button class="search-btn"><i class="fas fa-search"></i><span>搜索</span></button>
+                    <!-- <span class="search-result-AI">AI 搜索</span> -->
+                </div>
+                <div class="ai-search">
+                    <button id="ai-search-btn" class="ai-search-btn" title="AI 搜索">
+                        <i class="fas fa-robot"></i>
+                        <span>AI 搜索</span>
+                    </button>
+                </div>
+                <div class="user-actions">
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('upload_book') }}" class="btn btn-primary"><i class="fas fa-upload"></i> 上传文件</a>
+                    <div class="user-avatar">
+                        <i class="fas fa-user-circle avatar-icon"></i>
+                        <div class="user-dropdown">
+                            <a href="{{ url_for('library') }}" class="dropdown-item">我的书库</a>
+                            <a href="{{ url_for('profile') }}" class="dropdown-item">个人中心</a>
+                            <a href="{{ url_for('logout') }}" class="dropdown-item">退出登录</a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <a href="{{ url_for('login') }}" class="btn btn-outline">登录</a>
+                    <a href="{{ url_for('register') }}" class="btn btn-primary">注册</a>
+                    {% endif %}
+                    <button id="theme-toggle" class="theme-toggle" aria-label="切换主题" title="切换主题" aria-pressed="false">
+                        <i class="fas fa-moon" aria-hidden="true"></i>
+                        <span class="visually-hidden">切换主题</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要内容区域 -->
+    <div class="main-container">
+        {% block sidebar %}{% endblock %}
+        
+        <div class="content {% block content_class %}{% endblock %}">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="message-container">
+                        {% for message in messages %}
+                            <div class="alert">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-row">
+                <div class="footer-col">
+                    <h4>关于我们</h4>
+                    <ul>
+                        <li><a href="#">公司简介</a></li>
+                        <li><a href="#">招贤纳士</a></li>
+                        <li><a href="#">广告服务</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>产品与服务</h4>
+                    <ul>
+                        <li><a href="#">创作中心</a></li>
+                        <li><a href="#">学习中心</a></li>
+                        <li><a href="#">开发者工具</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>关注我们</h4>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-weibo"></i></a>
+                        <a href="#"><i class="fab fa-weixin"></i></a>
+                        <a href="#"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="copyright">
+                <p>©2023 CSDN 皮肤阅读器 版权所有</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 初始化主题
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            const themeIcon = document.querySelector('#theme-toggle i');
+            if (themeIcon) {
+                themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            }
+        }
+
+        // 用户下拉菜单延迟显示控制
+        document.addEventListener('DOMContentLoaded', function() {
+            const userAvatar = document.querySelector('.user-avatar');
+            const userDropdown = document.querySelector('.user-dropdown');
+            let hoverTimer;
+
+            if (userAvatar && userDropdown) {
+                // 鼠标进入时延迟显示
+                userAvatar.addEventListener('mouseenter', function() {
+                    clearTimeout(hoverTimer);
+                    hoverTimer = setTimeout(() => {
+                        userDropdown.style.opacity = '1';
+                        userDropdown.style.visibility = 'visible';
+                        userDropdown.style.transform = 'translateX(-50%) scale(1)';
+                    }, 400); // 400ms延迟
+                });
+
+                // 鼠标离开时立即隐藏
+                userAvatar.addEventListener('mouseleave', function() {
+                    clearTimeout(hoverTimer);
+                    userDropdown.style.opacity = '0';
+                    userDropdown.style.visibility = 'hidden';
+                    userDropdown.style.transform = 'translateX(-50%) scale(0.95)';
+                });
+
+                // 焦点状态处理
+                userAvatar.addEventListener('focusin', function() {
+                    clearTimeout(hoverTimer);
+                    userDropdown.style.opacity = '1';
+                    userDropdown.style.visibility = 'visible';
+                    userDropdown.style.transform = 'translateX(-50%) scale(1)';
+                });
+
+                userAvatar.addEventListener('focusout', function() {
+                    setTimeout(() => {
+                        if (!userAvatar.matches(':focus-within')) {
+                            userDropdown.style.opacity = '0';
+                            userDropdown.style.visibility = 'hidden';
+                            userDropdown.style.transform = 'translateX(-50%) scale(0.95)';
+                        }
+                    }, 100);
+                });
+            }
+        });
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

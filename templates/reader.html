@@ -1,0 +1,1096 @@
+{% extends "base.html" %}
+
+{% block title %}{{ book.title }} - CSDN技术文章{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* CSDN风格的阅读器样式 - 上班摸鱼优化版 */
+    .reader-container {
+        padding: 24px;
+        max-width: 1400px; /* 更接近 CSDN 文章页的内容宽度 */
+        margin: 0 auto;
+        background-color: var(--card-bg);
+        border-radius: 2px;
+        box-shadow: var(--shadow);
+        transition: all 0.3s ease;
+    }
+    
+    .article-header {
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .article-title {
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: #222;
+    }
+    
+    .article-info {
+        display: flex;
+        align-items: center;
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 10px;
+    }
+    
+    .article-info span {
+        margin-right: 15px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .article-info i {
+        margin-right: 5px;
+    }
+    
+    .article-tags {
+        display: flex;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+    }
+    
+    .article-tag {
+        padding: 2px 8px;
+        background-color: #f2f2f2;
+        color: #666;
+        border-radius: 2px;
+        font-size: 12px;
+        margin-right: 8px;
+        margin-bottom: 8px;
+    }
+    
+    .toc-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 14px;
+    }
+    
+    .toc-item:hover {
+        color: #ca0c16;
+        background-color: #f8f8f8;
+    }
+    
+    .toc-item.active {
+        font-weight: bold;
+        color: #ca0c16;
+        background-color: #f8f8f8;
+    }
+    
+    .reader-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .reader-content {
+        font-size: 16px;
+        line-height: 1.85;
+        color: var(--text-color);
+        padding: 0 4px;
+        word-wrap: break-word;
+    }
+
+    /* 翻页视觉反馈 */
+    .reader-content.page-flash-right {
+        animation: pageFlashRight 220ms ease-out;
+    }
+    .reader-content.page-flash-left {
+        animation: pageFlashLeft 220ms ease-out;
+    }
+    @keyframes pageFlashRight {
+        0%   { box-shadow: inset -10px 0 0 rgba(202,12,22,0.25); }
+        100% { box-shadow: inset 0 0 0 rgba(0,0,0,0); }
+    }
+    @keyframes pageFlashLeft {
+        0%   { box-shadow: inset 10px 0 0 rgba(202,12,22,0.25); }
+        100% { box-shadow: inset 0 0 0 rgba(0,0,0,0); }
+    }
+
+    .page-indicator.flash {
+        animation: indicatorPulse 260ms ease-out;
+    }
+    @keyframes indicatorPulse {
+        0%   { transform: scale(1); color: #ca0c16; }
+        50%  { transform: scale(1.06); }
+        100% { transform: scale(1); color: inherit; }
+    }
+
+    /* 内容/左右侧栏三栏布局（仿 CSDN） */
+    .content-layout {
+        display: grid;
+        grid-template-columns: 240px 1fr 300px;
+        gap: 24px;
+        align-items: start;
+    }
+    @media (max-width: 1200px) {
+        .content-layout {
+            grid-template-columns: 1fr 300px;
+        }
+        .blog_container_aside { display: none; }
+    }
+    @media (max-width: 992px) {
+        .content-layout {
+            grid-template-columns: 1fr;
+        }
+        .recommend-right { display: none; }
+        .blog_container_aside { display: none; }
+    }
+
+    .recommend-right {
+        position: sticky;
+        top: 80px; /* 与固定头部对齐 */
+    }
+    .recommend-card {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        box-shadow: var(--shadow);
+        margin-bottom: 16px;
+        overflow: hidden;
+    }
+    .recommend-card-header {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-color);
+    }
+    .recommend-card-body { padding: 10px 12px; }
+    .recommend-list { list-style: none; padding: 0; margin: 0; }
+    .recommend-list li { margin-bottom: 10px; }
+    .recommend-list a {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-color);
+        text-decoration: none;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+    .recommend-list a:hover { color: var(--primary-color); }
+    .recommend-list i { color: var(--csdn-blue); }
+    .recommend-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .recommend-tag {
+        padding: 4px 10px;
+        border-radius: 16px;
+        font-size: 12px;
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        text-decoration: none;
+    }
+    .recommend-tag:hover { background-color: var(--hover-color); }
+    .recommend-download a { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text-color); font-size: 13px; }
+    .recommend-download a:hover { color: var(--primary-color); }
+
+    /* 左侧 blog_container_aside 样式 */
+    .blog_container_aside {
+        position: sticky;
+        top: 80px; /* 与固定头部对齐 */
+        height: fit-content;
+    }
+    .author-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .author-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        border: 1px solid var(--border-color);
+        object-fit: cover;
+        background-color: #fff;
+    }
+    .author-meta { font-size: 13px; color: var(--text-color); }
+    .author-name { font-weight: 600; margin-bottom: 4px; }
+    .author-stats { color: #888; margin-bottom: 6px; }
+    .follow-btn {
+        display: inline-block;
+        padding: 4px 8px;
+        font-size: 12px;
+        border-radius: 2px;
+        border: 1px solid var(--primary-color);
+        color: var(--primary-color);
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    .follow-btn:hover { background-color: var(--hover-color); }
+
+    /* 仿 CSDN 文章排版 */
+    .reader-content h1 {
+        font-size: 24px;
+        font-weight: 600;
+        margin: 20px 0 16px;
+        color: #222;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 8px;
+    }
+    .reader-content h2 {
+        font-size: 20px;
+        font-weight: 500;
+        margin: 24px 0 14px;
+        color: #222;
+        border-left: 3px solid var(--primary-color);
+        padding-left: 8px;
+    }
+    .reader-content h3 {
+        font-size: 18px;
+        font-weight: 500;
+        margin: 18px 0 10px;
+        color: #333;
+    }
+    .reader-content p {
+        margin: 0 0 16px;
+    }
+    .reader-content ul, .reader-content ol {
+        padding-left: 22px;
+        margin: 0 0 16px;
+    }
+    .reader-content blockquote {
+        margin: 16px 0;
+        padding: 12px 16px;
+        background-color: var(--hover-color);
+        border-left: 4px solid var(--primary-color);
+        color: var(--light-text-color);
+        border-radius: 2px;
+    }
+    .reader-content pre {
+        background-color: #f6f8fa;
+        padding: 14px;
+        border-radius: 4px;
+        overflow-x: auto;
+        border: 1px solid var(--border-color);
+        margin: 0 0 16px;
+        font-family: Consolas, Monaco, 'Andale Mono', monospace;
+        font-size: 14px;
+    }
+    [data-theme="dark"] .reader-content pre {
+        background-color: #2b2b2b;
+        border-color: #3a3a3a;
+    }
+    .reader-content img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 2px;
+        box-shadow: var(--shadow);
+    }
+    
+    .navigation-controls {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 30px;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+    }
+    
+    .hidden {
+        display: none !important;
+    }
+    
+    /* 工作模式样式 */
+    .work-mode .reader-container {
+        max-width: 100%;
+    }
+    
+    .work-mode .sidebar {
+        display: none;
+    }
+    
+    .work-mode .content {
+        margin-left: 0;
+        width: 100%;
+    }
+    
+    .work-mode header {
+        display: none;
+    }
+    
+    .work-mode footer {
+        display: none;
+    }
+    
+    .work-mode .article-header {
+        display: none;
+    }
+    
+    /* 隐蔽模式样式 - 上班摸鱼优化 */
+    .stealth-mode .reader-container {
+        opacity: 0;
+        transform: scale(0.95);
+        pointer-events: none;
+    }
+    /* 隐蔽模式时整体内容区淡出，避免突兀 */
+    .content-layout { transition: opacity 0.25s ease, transform 0.25s ease; }
+    .stealth-mode .content-layout { opacity: 0; transform: scale(0.98); pointer-events: none; }
+    
+    .stealth-mode .sidebar {
+        display: none;
+    }
+    
+    .stealth-content {
+        display: none;
+        opacity: 0;
+        transition: opacity 0.25s ease;
+    }
+    
+    .stealth-mode .stealth-content {
+        display: block;
+        opacity: 1;
+        max-width: 1400px; /* 与阅读页面宽度一致 */
+        margin: 0 auto;
+        padding: 24px; /* 与阅读页面内边距一致 */
+        background-color: var(--card-bg);
+        border-radius: 2px; /* 与阅读页面圆角一致 */
+        box-shadow: var(--shadow); /* 与阅读页面阴影一致 */
+        z-index: 10001;
+        position: absolute;
+        top: 70px;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 100%;
+        overflow-y: auto;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* 快速隐藏快捷键提示 */
+    .quick-hide-tip {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: var(--primary-color);
+        color: white;
+        padding: 10px 15px;
+        border-radius: 16px;
+        font-size: 12px;
+        font-weight: 500;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        transition: opacity 0.25s ease, transform 0.2s ease;
+        animation: pulse 2s infinite;
+        cursor: pointer;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .quick-hide-tip:hover {
+        animation: none;
+        transform: scale(1.06);
+    }
+
+    /* 减少动画偏好 */
+    @media (prefers-reduced-motion: reduce) {
+        .quick-hide-tip { animation: none; transition: none; }
+        .stealth-content { transition: none; animation: none; }
+        .content-layout { transition: none; }
+    }
+    
+    /* 便携模式 - 小窗口阅读 */
+    .portable-mode {
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        width: 600px !important;
+        height: 400px !important;
+        max-width: 90vw !important;
+        max-height: 80vh !important;
+        z-index: 9999 !important;
+        resize: both !important;
+        overflow: auto !important;
+        border: 2px solid var(--primary-color) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3) !important;
+    }
+    
+    /* 便携模式样式 */
+    .portable-mode {
+        max-width: 1400px !important;
+        margin: 0 auto !important;
+        width: 100% !important;
+        background: var(--card-bg) !important;
+        padding: 12px !important;
+        border-radius: 2px !important;
+        box-shadow: var(--shadow);
+    }
+    
+    .portable-mode .reader-toolbar {
+        display: none !important;
+    }
+    
+    .portable-mode .reader-content {
+        font-size: 18px !important;
+        line-height: 1.8 !important;
+        max-height: 1.8em !important; /* 单行高度 */
+        overflow: hidden !important;
+        white-space: nowrap !important;
+        text-overflow: ellipsis !important;
+        padding: 0 !important;
+    }
+    
+    .portable-mode .navigation-controls {
+        display: none !important;
+    }
+    
+    /* 便携模式仅显示正文，隐藏非必要元素 */
+    .portable-mode .page-indicator {
+        display: none !important;
+    }
+    
+    .portable-mode .blog_container_aside,
+    .portable-mode .recommend-right {
+        display: none !important;
+    }
+    
+    .portable-mode .article-header {
+        display: none !important;
+    }
+    
+    /* 便携模式响应式适配 */
+    @media (max-width: 768px) {
+        .portable-mode {
+            padding: 8px !important;
+        }
+        
+        .portable-mode .reader-content {
+            font-size: 16px !important;
+            line-height: 1.6 !important;
+            max-height: 1.6em !important;
+        }
+        
+        .portable-mode .reader-toolbar {
+            padding: 4px 0 !important;
+        }
+        
+        .portable-mode .reader-actions button {
+            padding: 4px 8px !important;
+            font-size: 12px !important;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .portable-mode {
+            padding: 6px !important;
+        }
+        
+        .portable-mode .reader-content {
+            font-size: 14px !important;
+            line-height: 1.4 !important;
+            max-height: 1.4em !important;
+        }
+        
+        .portable-mode .reader-actions button {
+            padding: 3px 6px !important;
+            font-size: 11px !important;
+        }
+    }
+    
+    /* 便携模式按钮激活状态 */
+    #portable-mode.active {
+        background-color: var(--primary-color) !important;
+        color: white !important;
+    }
+    
+    /* 便携模式下，将工具栏固定在容器顶部，不随滚动变化 */
+    .portable-mode-old {
+        padding-top: 52px !important; /* 预留工具栏高度 */
+    }
+    .portable-mode-old .reader-toolbar {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        background: var(--card-bg) !important;
+        z-index: 10 !important;
+        padding: 8px 12px !important;
+        margin-bottom: 0 !important;
+        border-bottom: 1px solid #eee !important;
+    }
+    
+    .portable-toggle {
+        position: fixed;
+        bottom: 70px;
+        right: 20px;
+        background: var(--primary-color);
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+    }
+    
+    .portable-toggle:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+    }
+
+    /* 退出隐蔽模式浮动按钮 */
+    .stealth-exit-toggle {
+        position: fixed;
+        bottom: 120px;
+        right: 20px;
+        background: var(--primary-color);
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+    }
+    .stealth-exit-toggle:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+    }
+    .stealth-mode .stealth-exit-toggle {
+        display: flex;
+    }
+    
+    .csdn-article h1 {
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: #222;
+    }
+    
+    .csdn-article h2 {
+        font-size: 20px;
+        font-weight: 500;
+        margin: 25px 0 15px;
+        color: #222;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .csdn-article p {
+        margin-bottom: 16px;
+        line-height: 1.8;
+    }
+    
+    .csdn-article pre {
+        background-color: #f6f8fa;
+        padding: 15px;
+        border-radius: 4px;
+        overflow-x: auto;
+        margin-bottom: 16px;
+        border: 1px solid #e1e4e8;
+    }
+    
+    .csdn-article code {
+        font-family: Consolas, Monaco, 'Andale Mono', monospace;
+        font-size: 14px;
+        background-color: #f6f8fa;
+        padding: 2px 4px;
+        border-radius: 3px;
+        color: #24292e;
+    }
+    
+    /* 确保在浅色模式下隐藏模式时，代码块保持浅色背景 */
+    .stealth-mode .csdn-article pre,
+    .stealth-mode .csdn-article code {
+        background-color: #f6f8fa !important;
+        color: #24292e !important;
+        border-color: #e1e4e8 !important;
+    }
+    
+    /* 代码语法高亮颜色 - 确保在浅色模式下可见 */
+    .stealth-mode .csdn-article .hljs-comment,
+    .stealth-mode .csdn-article .hljs-quote {
+        color: #6a737d !important;
+    }
+    
+    .stealth-mode .csdn-article .hljs-keyword,
+    .stealth-mode .csdn-article .hljs-selector-tag,
+    .stealth-mode .csdn-article .hljs-subst {
+        color: #d73a49 !important;
+    }
+    
+    .stealth-mode .csdn-article .hljs-number,
+    .stealth-mode .csdn-article .hljs-literal,
+    .stealth-mode .csdn-article .hljs-variable,
+    .stealth-mode .csdn-article .hljs-template-variable,
+    .stealth-mode .csdn-article .hljs-tag .hljs-attr {
+        color: #005cc5 !important;
+    }
+    
+    .stealth-mode .csdn-article .hljs-string,
+    .stealth-mode .csdn-article .hljs-doctag,
+    .stealth-mode .csdn-article .hljs-regexp {
+        color: #032f62 !important;
+    }
+    
+    .stealth-mode .csdn-article .hljs-title,
+    .stealth-mode .csdn-article .hljs-section,
+    .stealth-mode .csdn-article .hljs-selector-id {
+        color: #6f42c1 !important;
+    }
+    
+    .stealth-mode .csdn-article .hljs-class .hljs-title,
+    .stealth-mode .csdn-article .hljs-type {
+        color: #6f42c1 !important;
+    }
+    
+    .stealth-mode .csdn-article .hljs-tag,
+    .stealth-mode .csdn-article .hljs-name,
+    .stealth-mode .csdn-article .hljs-attribute {
+        color: #22863a !important;
+    }
+    
+    .stealth-mode .csdn-article .hljs-built_in,
+    .stealth-mode .csdn-article .hljs-builtin-name {
+        color: #e36209 !important;
+    }
+    
+    .stealth-mode .csdn-article .hljs-meta {
+        color: #6a737d !important;
+    }
+    
+    .reader-actions {
+        display: flex;
+        align-items: center;
+    }
+    
+    .reader-actions button {
+        margin-left: 8px;
+        background: none;
+        border: 1px solid #eee;
+        color: #666;
+        cursor: pointer;
+        padding: 5px 10px;
+        border-radius: 3px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        transition: all 0.2s;
+    }
+    
+    .reader-actions button i {
+        margin-right: 5px;
+    }
+    
+    .reader-actions button:hover {
+        background-color: #f8f8f8;
+        color: #ca0c16;
+    }
+    
+    .reader-actions button.active {
+        color: #fff;
+        background-color: #ca0c16;
+        border-color: #ca0c16;
+    }
+    
+    /* 紧急模式快捷键提示 */
+    .emergency-tip {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: rgba(0,0,0,0.7);
+        color: #fff;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .emergency-tip.show {
+        opacity: 1;
+    }
+    
+    /* 键盘快捷键样式 */
+    .keyboard-shortcut {
+        display: inline-block;
+        background-color: #f0f0f0;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        padding: 1px 5px;
+        font-size: 11px;
+        color: #333;
+        margin: 0 2px;
+    }
+</style>
+{% endblock %}
+
+{% block content_class %}reader-page{% endblock %}
+
+{% block content %}
+<div class="content-layout">
+    <aside class="blog_container_aside" aria-label="左侧博客侧栏">
+        <div class="recommend-card">
+            <div class="recommend-card-header">作者名片</div>
+            <div class="recommend-card-body author-card">
+                <img src="{{ url_for('static', filename='pic/logo.png') }}" alt="作者头像" class="author-avatar">
+                <div class="author-meta">
+                    <div class="author-name">CSDN官方</div>
+                    <div class="author-stats">关注 1.2k · 粉丝 3.4k</div>
+                    <div class="author-actions"><a href="#" class="follow-btn">+ 关注</a></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="recommend-card">
+            <div class="recommend-card-header">博客导航</div>
+            <div class="recommend-card-body">
+                <ul class="recommend-list">
+                    <li><a href="#"><i class="fas fa-home"></i> 主页</a></li>
+                    <li><a href="#"><i class="fas fa-book"></i> 专栏</a></li>
+                    <li><a href="#"><i class="fas fa-user-plus"></i> 关注</a></li>
+                    <li><a href="#"><i class="fas fa-users"></i> 粉丝</a></li>
+                    <li><a href="#"><i class="fas fa-envelope"></i> 私信</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="recommend-card">
+            <div class="recommend-card-header">系列文章</div>
+            <div class="recommend-card-body">
+                <ul class="recommend-list">
+                    <li><a href="#"><i class="fas fa-link"></i> 银河麒麟软件安装指南 · 基础篇</a></li>
+                    <li><a href="#"><i class="fas fa-link"></i> 银河麒麟软件安装 · 进阶技巧</a></li>
+                    <li><a href="#"><i class="fas fa-link"></i> 常见依赖问题排查与解决</a></li>
+                </ul>
+            </div>
+        </div>
+    </aside>
+<div class="reader-container">
+    <input type="hidden" id="book-id" value="{{ book.id }}">
+    <input type="hidden" id="current-position" value="{{ position }}">
+    
+    <div class="article-header">
+        <h1 class="article-title">{{ book.title }}</h1>
+        <div class="article-info">
+            <span><i class="fas fa-user"></i> CSDN官方</span>
+            <span><i class="fas fa-calendar-alt"></i> {{ now.strftime('%Y-%m-%d') }}</span>
+            <span><i class="fas fa-eye"></i> 1024次阅读</span>
+            <span><i class="fas fa-thumbs-up"></i> 42</span>
+        </div>
+        <div class="article-tags">
+            <span class="article-tag">技术文章</span>
+            <span class="article-tag">编程</span>
+            <span class="article-tag">开发</span>
+        </div>
+    </div>
+    
+    <div class="reader-toolbar">
+        <div class="toolbar-left">
+            <span class="current-section">正文</span>
+        </div>
+        <div class="reader-actions">
+            <button id="font-size-decrease" title="减小字体"><i class="fas fa-minus"></i>A-</button>
+            <button id="font-size-increase" title="增大字体"><i class="fas fa-plus"></i>A+</button>
+            <button id="toggle-sidebar" title="隐藏侧边栏"><i class="fas fa-columns"></i>侧边栏</button>
+            <button id="add-bookmark" title="添加书签"><i class="fas fa-bookmark"></i>书签</button>
+            <button id="work-mode" title="工作模式"><i class="fas fa-briefcase"></i>工作模式</button>
+            <button id="portable-mode" title="便携模式 (按Tab)"><i class="fas fa-mobile-alt"></i>便携</button>
+            <button id="theme-toggle-reader" title="切换主题"><i class="fas fa-moon"></i>主题</button>
+            <button id="stealth-mode" title="紧急隐藏 (按ESC)"><i class="fas fa-eye-slash"></i>隐藏</button>
+        </div>
+    </div>
+    
+    <div id="reader-content" class="reader-content article-content">
+        {{ content|safe }}
+    </div>
+    
+    <div class="navigation-controls">
+        <div class="page-nav">
+            <button id="prev-page" class="page-btn" {% if position == 0 %}disabled{% endif %} data-position="{{ position - 1 if position > 0 else 0 }}"><i class="fas fa-arrow-left"></i> 上一页</button>
+            <button id="next-page" class="page-btn" {% if position == total_positions - 1 %}disabled{% endif %} data-position="{{ position + 1 if position < total_positions - 1 else position }}">下一页 <i class="fas fa-arrow-right"></i></button>
+        </div>
+        <div id="page-indicator" class="page-indicator">{{ position + 1 }} / {{ total_positions }}</div>
+    </div>
+</div>
+    <aside class="recommend-right" aria-label="右侧推荐">
+        <div class="recommend-card">
+            <div class="recommend-card-header">热门文章</div>
+            <div class="recommend-card-body">
+                <ul class="recommend-list">
+                    <li><a href="#"><i class="fas fa-fire"></i> 异步编程最佳实践：Promise 与 async/await</a></li>
+                    <li><a href="#"><i class="fas fa-fire"></i> Python 高性能 IO：asyncio 实战</a></li>
+                    <li><a href="#"><i class="fas fa-fire"></i> 前端工程化：构建速度与体积优化</a></li>
+                    <li><a href="#"><i class="fas fa-fire"></i> 数据结构与算法：刷题思路与套路</a></li>
+                    <li><a href="#"><i class="fas fa-fire"></i> Docker 与 K8s：从入门到进阶</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="recommend-card">
+            <div class="recommend-card-header">下载推荐</div>
+            <div class="recommend-card-body recommend-download">
+                <a href="#"><i class="fas fa-download"></i> VSCode 插件精选合集</a><br>
+                <a href="#"><i class="fas fa-download"></i> 前端开发脚手架模板</a><br>
+                <a href="#"><i class="fas fa-download"></i> 常用算法题目 PDF</a>
+            </div>
+        </div>
+
+        <div class="recommend-card">
+            <div class="recommend-card-header">相关标签</div>
+            <div class="recommend-card-body recommend-tags">
+                <a class="recommend-tag" href="#">JavaScript</a>
+                <a class="recommend-tag" href="#">Python</a>
+                <a class="recommend-tag" href="#">算法</a>
+                <a class="recommend-tag" href="#">后端</a>
+                <a class="recommend-tag" href="#">前端</a>
+                <a class="recommend-tag" href="#">数据库</a>
+            </div>
+        </div>
+
+        <div class="recommend-card">
+            <div class="recommend-card-header">作者推荐</div>
+            <div class="recommend-card-body">
+                <ul class="recommend-list">
+                    <li><a href="#"><i class="fas fa-user-circle"></i> CSDN官方 · 高质量技术专栏</a></li>
+                    <li><a href="#"><i class="fas fa-user-circle"></i> 架构与性能优化专题</a></li>
+                    <li><a href="#"><i class="fas fa-user-circle"></i> 新手到进阶学习路线</a></li>
+                </ul>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<!-- 修改后的伪装内容 - 与阅读页面布局完全一致 -->
+<div class="stealth-content">
+    <div class="content-layout">
+        <aside class="blog_container_aside" aria-label="左侧博客侧栏">
+            <div class="recommend-card">
+                <div class="recommend-card-header">作者名片</div>
+                <div class="recommend-card-body author-card">
+                    <img src="{{ url_for('static', filename='pic/logo.png') }}" alt="作者头像" class="author-avatar">
+                    <div class="author-meta">
+                        <div class="author-name">CSDN官方</div>
+                        <div class="author-stats">关注 1.2k · 粉丝 3.4k</div>
+                        <div class="author-actions"><a href="#" class="follow-btn">+ 关注</a></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="recommend-card">
+                <div class="recommend-card-header">博客导航</div>
+                <div class="recommend-card-body">
+                    <ul class="recommend-list">
+                        <li><a href="#"><i class="fas fa-home"></i> 主页</a></li>
+                        <li><a href="#"><i class="fas fa-book"></i> 专栏</a></li>
+                        <li><a href="#"><i class="fas fa-user-plus"></i> 关注</a></li>
+                        <li><a href="#"><i class="fas fa-users"></i> 粉丝</a></li>
+                        <li><a href="#"><i class="fas fa-envelope"></i> 私信</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="recommend-card">
+                <div class="recommend-card-header">系列文章</div>
+                <div class="recommend-card-body">
+                    <ul class="recommend-list">
+                        <li><a href="#"><i class="fas fa-link"></i> Python异步编程基础</a></li>
+                        <li><a href="#"><i class="fas fa-link"></i> 高级异步模式实践</a></li>
+                        <li><a href="#"><i class="fas fa-link"></i> 性能优化技巧</a></li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+
+        <div class="reader-container">
+            <div class="article-header">
+                <h1 class="article-title">深入理解Python异步编程模式</h1>
+                <div class="article-info">
+                    <span><i class="fas fa-user"></i> CSDN官方</span>
+                    <span><i class="fas fa-calendar-alt"></i> {{ now.strftime('%Y-%m-%d') }}</span>
+                    <span><i class="fas fa-eye"></i> 1024次阅读</span>
+                    <span><i class="fas fa-thumbs-up"></i> 42</span>
+                </div>
+                <div class="article-tags">
+                    <span class="article-tag">Python</span>
+                    <span class="article-tag">异步编程</span>
+                    <span class="article-tag">后端开发</span>
+                </div>
+            </div>
+            
+            <div class="reader-toolbar">
+                <div class="toolbar-left">
+                    <span class="current-section">正文</span>
+                </div>
+                <div class="reader-actions">
+                    <button title="减小字体"><i class="fas fa-minus"></i>A-</button>
+                    <button title="增大字体"><i class="fas fa-plus"></i>A+</button>
+                    <button title="隐藏侧边栏"><i class="fas fa-columns"></i>侧边栏</button>
+                    <button title="添加书签"><i class="fas fa-bookmark"></i>书签</button>
+                    <button title="工作模式"><i class="fas fa-briefcase"></i>工作模式</button>
+                    <button title="切换主题"><i class="fas fa-moon"></i>主题</button>
+                    <button title="退出隐蔽模式 (按ESC)" onclick="exitStealthMode()"><i class="fas fa-eye"></i>退出隐藏</button>
+                </div>
+            </div>
+            
+            <div class="reader-content article-content">
+                <div class="csdn-article">
+                    <h2>1. 异步编程的基础概念</h2>
+                    <p>异步编程允许程序在等待某些操作（如I/O操作、网络请求或定时器）完成时不阻塞（即不停止）主线程的执行，从而提高程序的效率和响应速度。在异步编程中，程序可以启动一个长时间运行的任务，然后继续执行其他任务，而无需等待该任务完成。</p>
+                    
+                    <h2>2. Python有哪些可以实现异步编程</h2>
+                    <p>1. <strong>greentlet</strong>: 一个python的三方模块,通过将函数作为参数放到greenlet()中,并在函数内部通过switch()函数切换。</p>
+                    <p>2. <strong>yield</strong>: 想必大家都对这个不陌生, Python的生成器yield和yield from也可以实现协程代码。</p>
+                    <pre><code>def func1():
+    yield 1
+    yield from func2()
+    yield 2
+
+def func2():
+    yield 3
+    yield 4
+
+f1 = func1()
+for item in f1:
+    print(item)</code></pre>
+                    <p>3. 当然python还有其他的第三方模块可以实现异步编程，此处就不一一赘述。</p>
+                    
+                    <h2>3. asyncio模块详解</h2>
+                    <p>asyncio是Python 3.4版本引入的标准库，直接内置了对异步IO的支持，使用async/await语法。</p>
+                    <pre><code>import asyncio
+
+async def main():
+    print('Hello')
+    await asyncio.sleep(1)
+    print('World')
+
+# Python 3.7+
+asyncio.run(main())</code></pre>
+                    
+                    <h2>4. 异步编程的优势</h2>
+                    <p>异步编程在处理I/O密集型任务时具有明显优势，能够显著提高程序的吞吐量和响应速度。特别是在网络编程、Web爬虫、高并发服务器等场景下，异步编程能够更好地利用系统资源。</p>
+                    
+                    <h2>5. 实际应用场景</h2>
+                    <p>在实际开发中，异步编程常用于：</p>
+                    <ul>
+                        <li>Web服务器开发</li>
+                        <li>数据库操作</li>
+                        <li>网络爬虫</li>
+                        <li>实时数据处理</li>
+                        <li>微服务架构</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="navigation-controls">
+                <div class="page-nav">
+                    <button class="page-btn"><i class="fas fa-arrow-left"></i> 上一页</button>
+                    <button class="page-btn">下一页 <i class="fas fa-arrow-right"></i></button>
+                </div>
+                <div class="page-indicator">1 / 1</div>
+            </div>
+        </div>
+
+        <aside class="recommend-right" aria-label="右侧推荐">
+            <div class="recommend-card">
+                <div class="recommend-card-header">热门文章</div>
+                <div class="recommend-card-body">
+                    <ul class="recommend-list">
+                        <li><a href="#"><i class="fas fa-fire"></i> Python装饰器详解与应用</a></li>
+                        <li><a href="#"><i class="fas fa-fire"></i> Django REST Framework实战</a></li>
+                        <li><a href="#"><i class="fas fa-fire"></i> 机器学习算法原理与实现</a></li>
+                        <li><a href="#"><i class="fas fa-fire"></i> 数据库优化技巧大全</a></li>
+                        <li><a href="#"><i class="fas fa-fire"></i> 微服务架构设计模式</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="recommend-card">
+                <div class="recommend-card-header">下载推荐</div>
+                <div class="recommend-card-body recommend-download">
+                    <a href="#"><i class="fas fa-download"></i> Python开发工具包</a><br>
+                    <a href="#"><i class="fas fa-download"></i> 异步编程示例代码</a><br>
+                    <a href="#"><i class="fas fa-download"></i> 性能优化指南PDF</a>
+                </div>
+            </div>
+
+            <div class="recommend-card">
+                <div class="recommend-card-header">相关标签</div>
+                <div class="recommend-card-body recommend-tags">
+                    <a class="recommend-tag" href="#">Python</a>
+                    <a class="recommend-tag" href="#">异步</a>
+                    <a class="recommend-tag" href="#">协程</a>
+                    <a class="recommend-tag" href="#">后端</a>
+                    <a class="recommend-tag" href="#">编程</a>
+                    <a class="recommend-tag" href="#">开发</a>
+                </div>
+            </div>
+
+            <div class="recommend-card">
+                <div class="recommend-card-header">作者推荐</div>
+                <div class="recommend-card-body">
+                    <ul class="recommend-list">
+                        <li><a href="#"><i class="fas fa-user-circle"></i> CSDN官方 · 高质量技术专栏</a></li>
+                        <li><a href="#"><i class="fas fa-user-circle"></i> Python进阶之路专题</a></li>
+                        <li><a href="#"><i class="fas fa-user-circle"></i> Web开发完整学习路线</a></li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+    </div>
+</div>
+<div class="emergency-tip" id="emergency-tip">按 <span class="keyboard-shortcut">ESC</span> 键快速切换到隐蔽模式</div>
+{% endblock %}
+
+{% block sidebar %}
+<div class="sidebar" style="position: fixed; top: 60px; left: 5px; height: calc(100vh - 60px); overflow-y: auto;">
+    <div class="sidebar-section">
+        <h3>目录</h3>
+        <div class="toc-list">
+            {% if toc_positions and toc_positions|length > 0 %}
+                {% for item in toc_positions %}
+                    <div class="toc-item {% if item.position == position %}active{% endif %}" onclick="window.location.href='/read/{{ book.id }}/{{ item.position }}'">
+                        {{ item.title }}
+                    </div>
+                {% endfor %}
+            {% else %}
+                {% for i in range(total_positions) %}
+                    <div class="toc-item {% if i == position %}active{% endif %}" onclick="window.location.href='/read/{{ book.id }}/{{ i }}'">
+                        第 {{ i + 1 }} 页
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="sidebar-section">
+        <h3>书签</h3>
+        <ul id="bookmark-list" class="bookmark-list">
+            <li class="bookmark-item">加载中...</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/reader.js') }}"></script>
+{% endblock %}

@@ -30,14 +30,37 @@
             <div class="book-info">
                 <div class="book-title">{{ book.title }}</div>
                 <div class="book-format">{{ book.file_format }}</div>
-                <a href="{{ url_for('read_book', book_id=book.id) }}" class="btn" style="margin-top: 10px; width: 100%;">阅读</a>
+                <button onclick="showReadingModeModal('{{ book.id }}')" class="btn" style="margin-top: 10px; width: 100%;">阅读</button>
             </div>
         </div>
         {% endfor %}
+    </div>
+    
+    <!-- 阅读模式选择弹窗 -->
+    <div id="readingModeModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>选择阅读模式</h3>
+            <div class="reading-modes">
+                <div class="mode-card" id="csdn-mode">
+                    <h4>CSDN模式</h4>
+                    <p>仿CSDN风格的阅读界面，适合文章阅读</p>
+                    <img src="{{ url_for('static', filename='pic/logo.png') }}" alt="CSDN模式预览">
+                </div>
+                <div class="mode-card" id="pdf-mode">
+                    <h4>PDF模式</h4>
+                    <p>仿WPS风格的PDF阅读界面，适合文档阅读</p>
+                    <img src="{{ url_for('static', filename='pic/wps.png') }}" alt="PDF模式预览">
+                </div>
+            </div>
+        </div>
     </div>
     {% else %}
     <p>您的书库中还没有书籍。</p>
     <a href="{{ url_for('upload_book') }}" class="btn">上传新书籍</a>
     {% endif %}
 </div>
+
+<!-- 引入阅读模式选择脚本 -->
+<script src="{{ url_for('static', filename='js/reading_mode.js') }}"></script>
 {% endblock %}

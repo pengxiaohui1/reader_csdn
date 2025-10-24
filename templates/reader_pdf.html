@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+
+{% block title %}{{ book.title }} - WPS 风格 PDF 阅读{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/wps_pdf.css') }}">
+{% endblock %}
+
+{% block content_class %}wps-content{% endblock %}
+
+{% block content %}
+<!-- 隐蔽模式内容 -->
+<div class="stealth-content csdn-article">
+  <h1>如何提高工作效率：10个实用技巧</h1>
+  <h2>1. 合理规划时间</h2>
+  <p>时间管理是提高工作效率的关键。使用番茄工作法，将工作分割成25分钟的专注时间段，每段之间休息5分钟。这种方法可以帮助你保持高度专注，同时避免疲劳。</p>
+  <pre><code>// 番茄工作法示例代码
+function startPomodoro() {
+  const WORK_TIME = 25 * 60;
+  const BREAK_TIME = 5 * 60;
+  
+  startTimer(WORK_TIME);
+  scheduleBreak(BREAK_TIME);
+}
+
+function startTimer(seconds) {
+  console.log(`开始专注工作 ${seconds/60} 分钟`);
+  // 计时器实现...
+}
+
+function scheduleBreak(seconds) {
+  console.log(`休息时间 ${seconds/60} 分钟`);
+  // 休息提醒实现...
+}</code></pre>
+  <h2>2. 减少干扰源</h2>
+  <p>工作时关闭社交媒体通知，将手机调至勿扰模式。研究表明，每次被打断后，需要约23分钟才能重新进入深度专注状态。</p>
+</div>
+
+<div class="wps-workspace" role="application" aria-label="WPS 风格阅读器">
+  <!-- 顶部功能区（Ribbon） -->
+  <div class="wps-ribbon">
+    <div class="wps-ribbon-left">
+      <div class="wps-header-left">
+        <div class="app-logo">W</div>
+        <div class="quick-actions">
+          <button class="icon-btn home-btn" title="返回首页"><i class="fas fa-home"></i></button>
+          <button class="icon-btn back-btn" title="返回"><i class="fas fa-arrow-left"></i></button>
+          <div class="doc-title">{{ book.title }}</div>
+        </div>
+      </div>
+      <div class="wps-tabs">
+        <button class="tab active" aria-selected="true">开始</button>
+        <button class="tab">插入</button>
+        <button class="tab">页面布局</button>
+        <button class="tab">引用</button>
+        <button class="tab">审阅</button>
+        <button class="tab">视图</button>
+        <div class="ai-tab">
+          <i class="fas fa-robot"></i>
+          <span>WPS AI</span>
+        </div>
+      </div>
+    </div>
+    <div class="wps-ribbon-right">
+      <div class="user-actions">
+        <button class="icon-btn" title="保存"><i class="fas fa-save"></i></button>
+        <button class="icon-btn" title="云同步"><i class="fas fa-cloud-upload-alt"></i></button>
+        <button class="share-btn">
+          <i class="fas fa-share-alt"></i>
+          <span>分享</span>
+        </button>
+      </div>
+      <div class="page-controls">
+        <div class="indicator" id="page-indicator" aria-live="polite">{{ position + 1 }} / {{ total_positions }}</div>
+        <div class="nav-controls" aria-label="翻页控件">
+          <button id="prev-page" class="nav-btn" data-position="{{ position - 1 }}" {% if position <= 0 %}disabled{% endif %} title="上一页"><i class="fas fa-chevron-left"></i></button>
+          <button id="next-page" class="nav-btn" data-position="{{ position + 1 }}" {% if position >= total_positions - 1 %}disabled{% endif %} title="下一页"><i class="fas fa-chevron-right"></i></button>
+        </div>
+      </div>
+      <!-- 阅读器工具栏按钮 -->
+      <div class="reader-actions">
+        <button id="work-mode" title="工作模式"><i class="fas fa-briefcase"></i> 工作模式</button>
+        <button id="stealth-mode" title="隐蔽模式"><i class="fas fa-user-secret"></i> 隐蔽模式</button>
+        <button id="portable-mode" title="便携模式"><i class="fas fa-compress"></i> 便携模式</button>
+        <button id="theme-toggle-pdf" title="切换背景颜色"><i class="fas fa-palette"></i> 背景色</button>
+        <button id="font-size-decrease" title="减小字体"><i class="fas fa-minus"></i></button>
+        <button id="font-size-increase" title="增大字体"><i class="fas fa-plus"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 工具栏 -->
+  <div class="wps-toolbar">
+    <div class="toolbar-group">
+      <button class="tool-btn"><i class="fas fa-paste"></i><span>粘贴</span></button>
+      <div class="divider"></div>
+      <button class="tool-btn"><i class="fas fa-cut"></i></button>
+      <button class="tool-btn"><i class="fas fa-copy"></i></button>
+      <button class="tool-btn"><i class="fas fa-paint-brush"></i></button>
+    </div>
+    <div class="toolbar-group">
+      <button class="tool-btn font-selector">
+        <span>微软雅黑</span>
+        <i class="fas fa-caret-down"></i>
+      </button>
+      <button class="tool-btn size-selector">
+        <span>11</span>
+        <i class="fas fa-caret-down"></i>
+      </button>
+    </div>
+    <div class="toolbar-group">
+      <button class="tool-btn"><i class="fas fa-bold"></i></button>
+      <button class="tool-btn"><i class="fas fa-italic"></i></button>
+      <button class="tool-btn"><i class="fas fa-underline"></i></button>
+      <button class="tool-btn"><i class="fas fa-strikethrough"></i></button>
+      <div class="divider"></div>
+      <button class="tool-btn"><i class="fas fa-highlighter"></i></button>
+      <button class="tool-btn color-btn"><div class="color-indicator"></div></button>
+    </div>
+    <div class="toolbar-group">
+      <button class="tool-btn"><i class="fas fa-align-left"></i></button>
+      <button class="tool-btn"><i class="fas fa-align-center"></i></button>
+      <button class="tool-btn"><i class="fas fa-align-right"></i></button>
+      <button class="tool-btn"><i class="fas fa-align-justify"></i></button>
+    </div>
+    <div class="toolbar-group">
+      <button class="tool-btn"><i class="fas fa-list-ul"></i></button>
+      <button class="tool-btn"><i class="fas fa-list-ol"></i></button>
+      <button class="tool-btn"><i class="fas fa-indent"></i></button>
+      <button class="tool-btn"><i class="fas fa-outdent"></i></button>
+    </div>
+  </div>
+
+  <!-- 工作区主体 -->
+  <div class="wps-body">
+    <!-- 左侧缩略图栏 -->
+    <aside class="wps-thumbnails" aria-label="缩略图侧边栏">
+      <div class="thumbnails-header">
+        <span>页面</span>
+        <button class="icon-btn" title="添加页面"><i class="fas fa-plus"></i></button>
+      </div>
+      <div class="thumbnails-list">
+        {% for i in range(total_positions) %}
+        <div class="thumbnail {% if i == position %}active{% endif %}" data-position="{{ i }}">
+          <div class="thumb-number">{{ i + 1 }}</div>
+          <div class="thumb-preview"></div>
+        </div>
+        {% endfor %}
+      </div>
+    </aside>
+
+    <!-- 文档阅读区域 -->
+    <main class="wps-doc" aria-label="文档阅读区域">
+      <article class="wps-page" aria-label="当前页面">
+        <input type="hidden" id="book-id" value="{{ book.id }}">
+        <input type="hidden" id="current-position" value="{{ position }}">
+        <div id="reader-content" class="doc-content">{{ content|safe }}</div>
+      </article>
+    </main>
+    
+    <!-- 右侧评论栏 -->
+    <aside class="wps-comments" aria-label="评论侧边栏">
+      <div class="comments-header">
+        <span>评论</span>
+        <button class="icon-btn" title="添加评论"><i class="fas fa-comment-alt"></i></button>
+      </div>
+      <div class="comments-empty">
+        <div class="empty-icon"><i class="fas fa-comments"></i></div>
+        <div class="empty-text">暂无评论</div>
+        <button class="add-comment-btn">添加评论</button>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- 快速隐藏快捷键提示 -->
+<div class="quick-hide-tip">
+  按 <span class="keyboard-shortcut">Esc</span> 快速隐藏内容
+</div>
+
+<!-- 退出隐蔽模式浮动按钮 -->
+<div class="stealth-exit-toggle" title="退出隐蔽模式">
+  <i class="fas fa-eye"></i>
+</div>
+
+<!-- 便携模式切换按钮 -->
+<div class="portable-toggle" title="切换便携模式">
+  <i class="fas fa-compress"></i>
+</div>
+
+<!-- 紧急模式快捷键提示 -->
+<div class="emergency-tip">
+  按 <span class="keyboard-shortcut">Esc</span> 快速隐藏
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/reader.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pdf_theme.js') }}"></script>
+<script src="{{ url_for('static', filename='js/font_size.js') }}"></script>
+<script>
+  // 缩略图点击跳转
+  document.querySelectorAll('.thumbnail').forEach(thumb => {
+    thumb.addEventListener('click', function() {
+      const position = parseInt(this.getAttribute('data-position'));
+      if (!isNaN(position)) {
+        changePage(position);
+      }
+    });
+  });
+
+  // 工作模式切换
+  document.getElementById('work-mode')?.addEventListener('click', function() {
+    document.body.classList.toggle('work-mode');
+    this.classList.toggle('active');
+  });
+
+  // 隐蔽模式切换
+  document.getElementById('stealth-mode')?.addEventListener('click', function() {
+    document.body.classList.toggle('stealth-mode');
+    this.classList.toggle('active');
+  });
+
+  // 便携模式切换
+  document.getElementById('portable-mode')?.addEventListener('click', function() {
+    document.querySelector('.wps-workspace').classList.toggle('portable-mode');
+    this.classList.toggle('active');
+    document.querySelector('.portable-toggle').classList.toggle('active');
+  });
+
+  // 便携模式浮动按钮
+  document.querySelector('.portable-toggle')?.addEventListener('click', function() {
+    document.querySelector('.wps-workspace').classList.toggle('portable-mode');
+    document.getElementById('portable-mode').classList.toggle('active');
+    this.classList.toggle('active');
+  });
+
+  // 退出隐蔽模式按钮
+  document.querySelector('.stealth-exit-toggle')?.addEventListener('click', function() {
+    document.body.classList.remove('stealth-mode');
+    document.getElementById('stealth-mode').classList.remove('active');
+  });
+
+  // ESC键快速隐藏
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      document.body.classList.add('stealth-mode');
+      document.getElementById('stealth-mode')?.classList.add('active');
+      
+      // 显示提示然后淡出
+      const tip = document.querySelector('.emergency-tip');
+      tip.classList.add('show');
+      setTimeout(() => {
+        tip.classList.remove('show');
+      }, 2000);
+    }
+  });
+
+  // 显示快捷键提示
+  setTimeout(() => {
+    const tip = document.querySelector('.quick-hide-tip');
+    if (tip) {
+      tip.style.display = 'block';
+      setTimeout(() => {
+        tip.style.opacity = '0';
+        setTimeout(() => {
+          tip.style.display = 'none';
+        }, 500);
+      }, 5000);
+    }
+  }, 2000);
+</script>
+{% endblock %}

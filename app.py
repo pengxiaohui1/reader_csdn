@@ -136,6 +136,13 @@ def upload_book():
 @app.route('/read/<int:book_id>/<int:position>')
 @login_required
 def read_book(book_id, position=None):
+    # 获取阅读模式参数
+    mode = request.args.get('mode', 'csdn')  # 默认为CSDN模式
+    
+    # 如果是PDF模式，重定向到PDF阅读路由
+    if mode == 'pdf':
+        return redirect(url_for('read_book_pdf', book_id=book_id, position=position))
+    
     book = Book.query.get_or_404(book_id)
     
     # 检查权限
@@ -197,6 +204,74 @@ def read_book(book_id, position=None):
                           position=current_position,
                           total_positions=total_positions,
                           now=datetime.datetime.now())
+
+
+@app.route('/read/pdf-<int:book_id>')
+@app.route('/read/<int:book_id>/PDF-<int:position>')
+@login_required
+def read_book_pdf(book_id, position=None):
+    book = Book.query.get_or_404(book_id)
+    
+    # 检查权限
+    if book.user_id != current_user.id:
+        flash('没有权限访问此书籍')
+        return redirect(url_for('library'))
+    
+    # 获取阅读进度
+    progress = ReadingProgress.query.filter_by(
+        user_id=current_user.id, book_id=book_id
+    ).first()
+    
+    # 如果没有指定位置，使用保存的进度
+    if position is None:
+        position = 0
+        if progress:
+            position = progress.position
+    
+    # 获取书籍内容
+    content = get_book_content(book.file_path, book.file_format, position)
+    toc = get_book_toc(book.file_path, book.file_format)
+    toc_positions = get_book_toc_positions(book.file_path, book.file_format)
+    
+    # 处理AJAX请求
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        try:
+            return jsonify({
+                'success': True,
+                'content': content['content'] if isinstance(content, dict) else content,
+                'position': content['position'] if isinstance(content, dict) and 'position' in content else position,
+                'total_positions': content['total_positions'] if isinstance(content, dict) and 'total_positions' in content else 1
+            })
+        except Exception as e:
+            app.logger.error(f"AJAX处理错误: {str(e)}")
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+    
+    # 确保content是字典类型并提取必要的变量
+    if isinstance(content, dict):
+        if 'error' in content:
+            flash(content['error'])
+            return redirect(url_for('library'))
+        
+        content_html = content.get('content', '')
+        current_position = content.get('position', position)
+        total_positions = content.get('total_positions', 1)
+    else:
+        content_html = content
+        current_position = position
+        total_positions = 1
+    
+    return render_template('reader_pdf.html', 
+                          book=book, 
+                          content=content_html, 
+                          toc=toc, 
+                          toc_positions=toc_positions,
+                          position=current_position,
+                          total_positions=total_positions,
+                          now=datetime.datetime.now())
+
 
 # 路由：保存阅读进度
 @app.route('/save_progress', methods=['POST'])
